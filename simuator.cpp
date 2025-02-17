@@ -26,49 +26,49 @@ public:
         ss >> opcode ;
        if (opcode == "ADD") {
             ss >>  rd_str >> rs1_str >> rs2_str;
-            int rd = stoi(rd_str.substr(1));
-            int rs1 = stoi(rs1_str.substr(1));
-            int rs2 = stoi(rs2_str.substr(1));
-    
+            int rd = stoi(rd_str.substr(1,rd_str.size()-1));
+            int rs1 = stoi(rs1_str.substr(1,rs1_str.size()-1));
+            int rs2 = stoi(rs2_str.substr(1,rs2_str.size()-1));
+            
             registers[rd] = registers[rs1] + registers[rs2];
         }
         else if(opcode==" ADDI"){
             ss >>  rd_str >> rs1_str >> rs2_str;
-            int rd = stoi(rd_str.substr(1));
-            int rs1 = stoi(rs1_str.substr(1));
-            int rs2 = stoi(rs2_str.substr(1));
+            int rd = stoi(rd_str.substr(1,rd_str.size()-1));
+            int rs1 = stoi(rs1_str.substr(1,rs1_str.size()-1));
+            int rs2 = stoi(rs2_str.substr(1,rs2_str.size()-1));
     
             registers[rd] = registers[rs1] + registers[rs2];
         }
          else if (opcode == "LD") {
             ss>>rd_str>>num>>rs2_str;
-            int  rd = stoi(rd_str.substr(1));
+            int  rd = stoi(rd_str.substr(1,rd_str.size()-1));
           int rs1 = num;
-          int  rs2 = stoi(rs2_str.substr(1));  
+          int  rs2 = stoi(rs2_str.substr(1,rs2_str.size()-1));  
 
             registers[rd]=registers[rs1+rs2];
           
         }
         else if (opcode =="SUB"){
             ss>> rd_str >> rs1_str >> rs2_str;
-            int rd = stoi(rd_str.substr(1));
-            int rs1 = stoi(rs1_str.substr(1));
-            int rs2 = stoi(rs2_str.substr(1));
+            int rd = stoi(rd_str.substr(1,rd_str.size()-1));
+            int rs1 = stoi(rs1_str.substr(1,rs1_str.size()-1));
+            int rs2 = stoi(rs2_str.substr(1,rs2_str.size()-1));
     
             registers[rd] = registers[rs1] - registers[rs2];
         }
         else if( opcode == "SW"){
             ss>>rd_str>>num>>rs2_str;
-            int  rd = stoi(rd_str.substr(1));
+            int  rd = stoi(rd_str.substr(1,rd_str.size()-1));
           int rs1=num;
-          int  rs2 = stoi(rs2_str.substr(1));  
+          int  rs2 = stoi(rs2_str.substr(1,rs2_str.size()-1));  
             registers[rs1+rs2]=registers[rd];
 
         }
         else if(opcode == "BNE"){
             ss>>rs1_str>>rs2_str>>label;
-          int  rs1 = stoi(rs1_str.substr(1));
-          int  rs2 = stoi(rs2_str.substr(1));
+          int  rs1 = stoi(rs1_str.substr(1,rs1_str.size()-1));
+          int  rs2 = stoi(rs2_str.substr(1,rs2_str.size()-1));
           if(registers[rs1]!=registers[rs2]&& labels.find(label) != labels.end() ){
            pc = labels[label];
            return;
@@ -76,8 +76,8 @@ public:
         }
         else if(opcode == "BEQ"){
             ss>>rs1_str>>rs2_str>>label;
-          int  rs1 = stoi(rs1_str.substr(1));
-          int  rs2 = stoi(rs2_str.substr(1));
+          int  rs1 = stoi(rs1_str.substr(1,rs1_str.size()-1));
+          int  rs2 = stoi(rs2_str.substr(1,rs2_str.size()-1));
           if(registers[rs1]==registers[rs2]&& labels.find(label) != labels.end() ){
            pc = labels[label];
            return;
@@ -86,8 +86,8 @@ public:
         }
         else if(opcode == "BLE"){
             ss>>rs1_str>>rs2_str>>label;
-          int  rs1 = stoi(rs1_str.substr(1));
-          int  rs2 = stoi(rs2_str.substr(1));
+          int  rs1 = stoi(rs1_str.substr(1,rs1_str.size()-1));
+          int  rs2 = stoi(rs2_str.substr(1,rs2_str.size()-1));
           if(registers[rs1]<registers[rs2]&& labels.find(label) != labels.end() ){
            pc = labels[label];
            return;
@@ -97,7 +97,7 @@ public:
 
         else if(opcode =="JAL"){
             ss>>rd_str>>label;
-            int rd = stoi(rd_str.substr(1));
+            int rd = stoi(rd_str.substr(1,rd_str.size()-1));
             if (labels.find(label) != labels.end()) {
                 registers[rd] = pc + 1;  // Save return address
                 pc = labels[label];      // Jump to label
@@ -131,7 +131,7 @@ public:
     unordered_map<string,int > labels;
 
     Simulator() {
-        memory.resize(1024, 0);
+        memory.resize(4096, 0);
         clock = 0;
         for (int i = 0; i < 4; i++) {
             cores.push_back(Cores(i));
