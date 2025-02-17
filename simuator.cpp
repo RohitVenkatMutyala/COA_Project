@@ -196,7 +196,7 @@ public:
 
 int main() {
     Simulator sim;
-    if (!sim.loadprogram("input.asm")) {
+    if (!sim.loadprogram("out.asm")) {
         return 1;
     }
     
