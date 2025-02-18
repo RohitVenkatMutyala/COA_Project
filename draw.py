@@ -19,4 +19,7 @@ plt.xlabel('Register Index (X0 to X31)')
 plt.ylabel('Register Value')
 plt.legend()
 plt.grid(True)
+
+
+
 plt.show()
