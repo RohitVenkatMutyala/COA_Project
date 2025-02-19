@@ -200,7 +200,7 @@ public:
         for (int i = 0; i < 4; i++) {
             cout << "Core " << i << ": ";
             outfile << "Core " << i << ": ";
-            for (int j = 0; j < 32; j++) {
+            for (int j = 0; j < 7; j++) {
                 cout << setw(3) << cores[i].memo[j] << " ";
                 outfile << setw(3) << cores[i].memo[j] << " ";
             }
