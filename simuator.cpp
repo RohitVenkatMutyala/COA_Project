@@ -18,7 +18,7 @@ public:
 
     Cores(int cid) : registers(32, 0),memo(1024,0), pc(0), coreid(cid) {}
 
-    void execute(const vector<string>& pgm, unordered_map<string ,int>&labels  ) {
+    void execute(const vector<string>& pgm, vector<int>&memory, unordered_map<string ,int>&labels  ) {
         if (pc >= pgm.size()) return;
 
         stringstream ss(pgm[pc]);
@@ -32,24 +32,26 @@ public:
             int rs2 = stoi(rs2_str.substr(1,rs2_str.size()-1));
             
             registers[rd] = registers[rs1] + registers[rs2];
+            memory[rd]=registers[rd];
             memo[rd]=registers[rd];
         }
-        else if(opcode==" ADDI"){
+        else if(opcode=="ADDI"){
             ss >>  rd_str >> rs1_str >> num;
             int rd = stoi(rd_str.substr(1,rd_str.size()-1));
             int rs1 = stoi(rs1_str.substr(1,rs1_str.size()-1));
             int rs2 = num;
     
             registers[rd] = registers[rs1] + num;
-            memo[rd]=registers[rd];
+            memory[rd]=registers[rd];
+          memo[rd]=registers[rd];
         }
          else if (opcode == "LD") {
             ss>>rd_str>>num>>rs2_str;
             int  rd = stoi(rd_str.substr(1,rd_str.size()-1));
           int rs1 = num;
           int  rs2 = stoi(rs2_str.substr(1,rs2_str.size()-1));  
-
-            registers[rd]=memo[rs1+rs2];
+           registers[rd]=memory[rs1+rs2];
+            //registers[rd]=memo[rs1+rs2];
             //memo[rd]=registers[rd];
           
         }
@@ -66,9 +68,10 @@ public:
             ss>>rd_str>>num>>rs2_str;
             int  rd = stoi(rd_str.substr(1,rd_str.size()-1));
           int rs1=num;
-          int  rs2 = stoi(rs2_str.substr(1,rs2_str.size()-1));  
-            memo[rs1+rs2]=registers[rd];
-            registers[rs1+rs2]=memo[rs1+rs2];
+          int  rs2 = stoi(rs2_str.substr(1,rs2_str.size()-1)); 
+          memory[rs1+rs2]=registers[rd]; 
+           memo[rs1+rs2]=registers[rd];
+            registers[rs1+rs2]=memory[rs1+rs2];
 
         }
         else if(opcode == "BNE"){
@@ -132,12 +135,13 @@ class Simulator {
 public:
     
     int clock;
+    vector<int>memory;
     vector<Cores> cores;
     vector<string> program;
     unordered_map<string,int > labels;
 
     Simulator() {
-      //  memory.resize(4096, 0);
+       memory.resize(4096, 0);
         clock = 0;
         for (int i = 0; i < 4; i++) {
             cores.push_back(Cores(i));
@@ -177,7 +181,7 @@ public:
     void run() {
         while (clock < program.size()) {
             for (int i = 0; i < 4; i++) {
-                cores[i].execute(program,labels);
+                cores[i].execute(program,memory,labels);
             }
             clock++;
         }
@@ -199,13 +203,13 @@ public:
         cout << "memory States:\n";
         for (int i = 0; i < 4; i++) {
             cout << "Core " << i << ": ";
-            outfile << "Core " << i << ": ";
-            for (int j = 0; j < 7; j++) {
+           
+            for (int j = 0; j < 9; j++) {
                 cout << setw(3) << cores[i].memo[j] << " ";
-                outfile << setw(3) << cores[i].memo[j] << " ";
+               
             }
             cout << endl;
-            outfile << endl;
+            
         }
     }
    
@@ -216,67 +220,7 @@ int main() {
     if (!sim.loadprogram("in.asm")) {
         return 1;
     }
-    
-    sim.cores[0].memo[0]= 1;
-    sim.cores[0].memo[1] = 2;
-    sim.cores[0].memo[2] = 4;
-    sim.cores[0].memo[3] = 1;
-    sim.cores[0].memo[4] = 12;
-    sim.cores[0].memo[5] = 3;
-    sim.cores[0].memo[6] = 2;
-    sim.cores[1].memo[0]= 1;
-    sim.cores[1].memo[1] = 2;
-    sim.cores[1].memo[2] = 4;
-    sim.cores[1].memo[3] = 1;
-    sim.cores[1].memo[4] = 12;
-    sim.cores[1].memo[5] = 3;
-    sim.cores[1].memo[6] = 2;
-    sim.cores[2].memo[0]= 1;
-    sim.cores[2].memo[1] = 2;
-    sim.cores[2].memo[2] = 4;
-    sim.cores[2].memo[3] = 1;
-    sim.cores[2].memo[4] = 12;
-    sim.cores[2].memo[5] = 3;
-    sim.cores[2].memo[6] = 2;
-    sim.cores[3].memo[0]= 1;
-    sim.cores[3].memo[1] = 2;
-    sim.cores[3].memo[2] = 4;
-    sim.cores[3].memo[3] = 1;
-    sim.cores[3].memo[4] = 12;
-    sim.cores[3].memo[5] = 3;
-    sim.cores[3].memo[6] = 2;
-    
- 
-  sim.cores[0].registers[0]= 1;
-  sim.cores[0].registers[1] = 2;
-  sim.cores[0].registers[2] = 4;
-  sim.cores[0].registers[3] = 1;
-  sim.cores[0].registers[4] = 12;
-  sim.cores[0].registers[5] = 3;
-  sim.cores[0].registers[6] = 2;
-  sim.cores[1].registers[0]= 1;
-  sim.cores[1].registers[1] = 2;
-  sim.cores[1].registers[2] = 4;
-  sim.cores[1].registers[3] = 1;
-  sim.cores[1].registers[4] = 12;
-  sim.cores[1].registers[5] = 3;
-  sim.cores[1].registers[6] = 2;
-  sim.cores[2].registers[0]= 7;
-  sim.cores[2].registers[1] = 2;
-  sim.cores[2].registers[2] = 4;
-  sim.cores[2].registers[3] = 1;
-  sim.cores[2].registers[4] = 12;
-  sim.cores[2].registers[5] = 3;
-  sim.cores[2].registers[6] = 2;
-  sim.cores[3].registers[0]= 1;
-  sim.cores[3].registers[1] = 2;
-  sim.cores[3].registers[2] = 4;
-  sim.cores[3].registers[3] = 1;
-  sim.cores[3].registers[4] = 12;
-  sim.cores[3].registers[5] = 3;
-  sim.cores[3].registers[6] = 2;
-   
-    sim.run();
+   sim.run();
     sim.display();
 
     cout << "Number of clock cycles: " << sim.clock << endl;
