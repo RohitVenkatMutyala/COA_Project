@@ -52,7 +52,7 @@ public:
           int  rs2 = stoi(rs2_str.substr(1,rs2_str.size()-1));  
            registers[rd]=memory[rs1+rs2];
             //registers[rd]=memo[rs1+rs2];
-            //memo[rd]=registers[rd];
+            memo[rd]=registers[rd];
           
         }
         else if (opcode =="SUB"){
