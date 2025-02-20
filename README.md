@@ -13,7 +13,7 @@ This project aims to develop a simulator similar to Ripes that can simulate a mu
   - BNE  
   - JAL (jump)  
   - LW/SW  
-  - Additional instruction: AND  
+  - Additional instruction: J 
 - Each core contains a special-purpose, read-only register to store its core number.
 - Executes instructions from an input assembly file.
 - Displays final register contents and memory state post-execution.
