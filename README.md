@@ -1,4 +1,4 @@
-# COA_Project
+ # Team shouryanga parvam
  
 # Multi-Core Processor Simulator
 
