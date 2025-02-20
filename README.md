@@ -1,16 +1,34 @@
- # Team shouryanga parvam
- 
+ # Roll No 21 Shouryanga parvam
+ ## Team Members
+ ### M.Rohith Venkat     CS23B032
+ ### L.Narshima          CS23B028
 # Multi-Core Processor Simulator
 
 ## Project Overview
 This project aims to develop a simulator similar to Ripes that can simulate a multi-core environment with four processors (cores). The simulator supports the execution of RISC-V instructions and simulates the execution of the same assembly instructions across all cores.
+## How To Use Our Simulator 
+- Downlaod the Zip file that was present there .
+- Please Extract That File .
+- You Can find simulator.cpp.
+- Please Run The File .
+- For The input of the simulator I have a written a assembly code for bubble sort name as (in.asm) it contains around 150 lines of comands .
+- After sucessfully running the code You get see the output in the memory states .
+- Then After please Run run the draw.py then you can get to see the output in the memory in the by using the Graph.
+- Here I am using Python for Plotting because CPP doesnt contain any Matplotlib .
+- If want To use it You should want to import some Python files That's i have used python for only Plotting .
+- I belive that my assembly code for the bubble sort taking minimum no of clock cycles .
+- Which makes the CORE more optimized .
+- This is the End for the Project phase 1 .
+- Regards Team Shouryanga Parvam .
+- Expecting the Best Output .
 
 ## Features
 - Simulates a 4-core processor environment.
 - Each core can access a shared 4kB memory (1kB per core).
 - Supports the following RISC-V instructions:
   - ADD/SUB  
-  - BNE  
+  - BNE
+  - BLE (This was main thing we have used in writing the assembly code)
   - JAL (jump)  
   - LW/SW  
   - Additional instruction: J 
