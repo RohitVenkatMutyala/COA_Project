@@ -173,23 +173,28 @@ public:
         for (size_t i = 0; i < cores.size(); ++i)
         {
             cout << "Core " << i << ": ";
-            outfile << "Core " << i << ": ";
+            //outfile << "Core " << i << ": ";
             for (auto reg : cores[i].registers)
             {
                 cout << reg << ' ';
-                outfile << reg << ' ';
+               // outfile << reg << ' ';
             }
             cout << '\n';
-            outfile << '\n';
+           
         }
 
         cout << "\nMemory States:\n";
         for (size_t i = 0; i < cores.size(); ++i)
         {
             cout << "Core " << i << ": ";
-            for (int j = 0; j < 9; ++j)
+            outfile << "Core " << i << ": ";
+            for (int j = 0; j < 9; ++j){
                 cout << cores[i].memo[j] << ' ';
+                outfile << cores[i].memo[j] << ' ';
+            
+            }
             cout << '\n';
+            outfile << '\n';
         }
     }
 };
