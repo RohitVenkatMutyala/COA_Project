@@ -2,8 +2,8 @@ ADDI X2 X0 43
 ADDI X3 X0 103
 ADDI X4 X0 155
 ADDI X5 X0 333
-ADDI X6 X0 26
-ADDI X1 X0 13
+ADDI X6 X0 11
+ADDI X1 X0 150
 ADDI X7 X0 052
 ADDI X8 X0 110
 
@@ -208,7 +208,8 @@ pass6_next:
     LD X2 2 X0     
     BLE X1 X2 end
     SW X2 1 X0     
-    SW X1 2 X0    
+    SW X1 2 X0   
+    J end 
 
 end:
     J end
