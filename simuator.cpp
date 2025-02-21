@@ -22,7 +22,7 @@ public:
         memo.fill(0);
     }
 
-    int reg_index(const string &r) { return stoi(r.substr(1)); }
+    int reg_index(const string &r) { return stoi(r.substr(1,r.size()-1)); }
 
     void execute(const vector<string> &program, vector<int> &memory, unordered_map<string, int> &labels)
     {
