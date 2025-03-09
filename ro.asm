@@ -1,0 +1,109 @@
+ADD x23 x23 x24
+SW x23 23
+LD x24 30
+
+ADD x22 x22 x23
+SW x22 22
+LD x23 30
+
+ADD x21 x21 x22
+SW x21 21
+LD x22 30
+
+ADD x20 x20 x21
+SW x20 20
+LD x21 30
+
+ADD x19 x19 x20
+SW x19 19
+LD x20 30
+
+ADD x18 x18 x19
+SW x18 18
+LD x19 30
+
+ADD x17 x17 x18
+SW x17 17
+LD x18 30
+
+ADD x16 x16 x17
+SW x16 16
+LD x17 30
+
+ADD x15 x15 x16
+SW x15 15
+LD x16 30
+
+ADD x14 x14 x15
+SW x14 14
+LD x15 30
+
+ADD x13 x13 x14
+SW x13 13
+LD x14 30
+
+ADD x12 x12 x13
+SW x12 12
+LD x13 30
+
+ADD x11 x11 x12
+SW x11 11
+LD x12 30
+
+ADD x10 x10 x11
+SW x10 10
+LD x11 30
+
+ADD x9 x9 x10
+SW x9 9
+LD x10 30
+
+ADD x8 x8 x9
+SW x8 8
+LD x9 30
+
+ADD x7 x7 x8
+SW x7 7
+LD x8 30
+
+ADD x6 x6 x7
+SW x6 6
+LD x7 30
+
+ADD x5 x5 x6
+SW x5 5
+LD x6 30
+
+ADD x4 x4 x5
+SW x4 4
+LD x5 30
+
+ADD x3 x3 x4
+SW x3 3
+LD x4 30
+
+ADD x2 x2 x3
+SW x2 2
+LD x3 30
+
+ADD x1 x1 x2
+SW x1 1
+LD x2 30
+
+ADD x0 x0 x1
+SW x0 0
+LD x1 30
+
+LDC2 x1 0
+LDC3 x2 0
+LDC4 x3 0
+ADD x2 x2 x3
+LD X3 30
+SW X2 2
+ADD X1 X1 X2
+LD X2 30
+SW X1 1
+ADD X0 X0 X1
+LD X1 30
+SW X0 0
+
