@@ -101,7 +101,9 @@ public:
             ID_EX = reg_index(rd); // Move to EX stage
         }
         else if (opcode == "ARR"){
-            for (int i = 0; i < 100; ++i)
+            int n;
+            iss>>n;
+            for (int i = 0; i < n; ++i)
             {
                 memory[i / 25][i % 25] = i + 1;  // Distribute across the 4 cores' memory sections
                 registers[i / 25][i % 25] = i + 1; // Initialize core registers
@@ -251,7 +253,7 @@ public:
     // Display core statistics (stalls, IPC, register states)
     void display()
     {
-        for (int i = 0; i < cores.size()-3; ++i)
+        for (int i = 0; i < cores.size(); ++i)
         {
             cout << "Core " << i << " Stats:" << endl;
             cout << "Number of stalls: " << cores[i].stalls << endl;
@@ -291,16 +293,14 @@ public:
 int main()
 {
     bool enable_forwarding;
-    int num_cores;
-    cout << "Enter number of compute units: ";
-    cin >> num_cores;
+    int num_cores=4;
     cout << "Enable data forwarding? (1 for Yes, 0 for No): ";
     cin >> enable_forwarding;
 
     Simulator sim(num_cores, enable_forwarding);
     sim.set_instruction_latencies();
     
-    if (!sim.load_program("ro.asm"))
+    if (!sim.load_program("input.asm"))
         return 1;
 
     sim.run();
