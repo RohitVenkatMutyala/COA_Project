@@ -102,7 +102,7 @@ This project aims to develop a simulator similar to Ripes that can simulate a mu
 
 ## Future Work
 - Extend support for GPU cores in subsequent phases.  
-- Add a graphical interface for better visualization.  
+
 - Implement single-step execution and breakpoints.  
 - Expand the instruction set further.  
 
