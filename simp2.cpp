@@ -100,6 +100,13 @@ public:
             registers[CID][reg_index(rd)] = registers[CID][reg_index(rs1)] + imm;
             ID_EX = reg_index(rd); // Move to EX stage
         }
+        else if (opcode == "ARR"){
+            for (int i = 0; i < 100; ++i)
+            {
+                memory[i / 25][i % 25] = i + 1;  // Distribute across the 4 cores' memory sections
+                registers[i / 25][i % 25] = i + 1; // Initialize core registers
+            }
+        }
         // EX/MEM (Execute and Memory stage)
         else if (opcode == "LD")
         {
@@ -188,14 +195,14 @@ public:
     }
 
     // Assign memory values to different cores
-    void assign_memory_to_cores()
+   /* void assign_memory_to_cores()
     {
         for (int i = 0; i < 100; ++i)
         {
             memory[i / 25][i % 25] = i + 1;  // Distribute across the 4 cores' memory sections
             cores[i / 25].registers[i / 25][i % 25] = i + 1; // Initialize core registers
         }
-    }
+    }*/
 
     // Set instruction latencies for the cores
     void set_instruction_latencies()
@@ -263,7 +270,7 @@ public:
     // Run the program on all cores
     void run()
     {
-        assign_memory_to_cores(); // Assign memory to cores
+        //assign_memory_to_cores(); // Assign memory to cores
         while (true)
         {
             bool all_done = true;
