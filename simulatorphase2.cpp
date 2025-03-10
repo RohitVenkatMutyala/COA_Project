@@ -5,8 +5,20 @@
 #include <array>
 #include <unordered_map>
 #include <string>
+#include <queue>
 
 using namespace std;
+
+struct Instruction {
+    string opcode;
+    int dest_reg = -1;    // Destination register (rd)
+    int src_reg1 = -1;    // Source register 1 (rs1)
+    int src_reg2 = -1;    // Source register 2 (rs2)
+    int imm = 0;          // Immediate value
+    int mem_addr = -1;    // Memory address
+    string label;         // Branch/jump label
+    int issue_cycle = -1; // Cycle when instruction was issued
+};
 
 class Core
 {
@@ -20,7 +32,11 @@ public:
     int executed_instructions = 0; // Count of executed instructions
     int clock_cycles = 0; // Total number of clock cycles
     int CID; // Compute Unit ID
-    int EX_MEM = -1, MEM_WB = -1, ID_EX = -1; // Pipeline registers (EX/MEM, MEM/WB, ID/EX stages)
+    
+    // Track pipeline registers and stages
+    vector<Instruction> pipeline; // Instructions in the pipeline
+    unordered_map<int, int> reg_ready_cycle; // Maps register to cycle when it will be ready
+    int current_cycle = 0; // Current clock cycle
 
     // Constructor to initialize the core properties
     Core(int id, bool enable_forwarding)
@@ -34,11 +50,6 @@ public:
         {
             registers[CID][i] = 0;  // Set all registers to 0
         }
-
-        // Initialize the pipeline registers (stages)
-        EX_MEM = -1;  // No value in EX/MEM register initially
-        MEM_WB = -1;  // No value in MEM/WB register initially
-        ID_EX = -1;   // No value in ID/EX register initially
     }
 
     // Convert register name (e.g., x1) to index (1 for x1)
@@ -50,131 +61,200 @@ public:
         latencies = latencies_map;
     }
 
+    // Check for RAW hazards
+    int check_raw_hazard(const Instruction& instr) {
+        int stall_cycles = 0;
+        
+        // Check source registers against destination registers in pipeline
+        if (instr.src_reg1 != -1) {
+            if (reg_ready_cycle.count(instr.src_reg1)) {
+                int wait_cycles = reg_ready_cycle[instr.src_reg1] - current_cycle;
+                if (wait_cycles > 0) {
+                    if (!forwarding) {
+                        stall_cycles = max(stall_cycles, wait_cycles);
+                    } else {
+                        // With forwarding, stall only if the value isn't ready in EX stage
+                        if (wait_cycles > 1) {
+                            stall_cycles = max(stall_cycles, wait_cycles - 1);
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (instr.src_reg2 != -1) {
+            if (reg_ready_cycle.count(instr.src_reg2)) {
+                int wait_cycles = reg_ready_cycle[instr.src_reg2] - current_cycle;
+                if (wait_cycles > 0) {
+                    if (!forwarding) {
+                        stall_cycles = max(stall_cycles, wait_cycles);
+                    } else {
+                        // With forwarding, stall only if the value isn't ready in EX stage
+                        if (wait_cycles > 1) {
+                            stall_cycles = max(stall_cycles, wait_cycles - 1);
+                        }
+                    }
+                }
+            }
+        }
+        
+        return stall_cycles;
+    }
+
     // Execute the instructions for the core
     void execute(const vector<string> &program, vector<vector<int>> &memory, unordered_map<string, int> &labels)
     {
         if (pc >= static_cast<int>(program.size()))
             return;
 
+        // Parse the instruction
+        Instruction instr;
         istringstream iss(program[pc]);
-        string opcode;
-        iss >> opcode;
+        iss >> instr.opcode;
 
-        int latency = latencies.count(opcode) ? latencies[opcode] : 1; // Get latency for opcode
-        executed_instructions++; // Increment executed instruction count
+        int latency = latencies.count(instr.opcode) ? latencies[instr.opcode] : 1;
         
-        // Pipeline handling based on forwarding
-        if (forwarding)
-        {
-            clock_cycles++; // Pipeline execution allows overlapping (1 cycle for each instruction)
-        }
-        else
-        {
-            clock_cycles += latency; // Non-pipelined execution accumulates full latency
-            stalls += (latency - 1); // Each additional cycle counts as a stall (without forwarding)
-        }
-
-        // IF/ID (Fetch and Decode stage)
-        if (opcode == "ADD" || opcode == "SUB" || opcode == "MUL")
-        {
+        // Parse operands based on instruction type
+        if (instr.opcode == "ADD" || instr.opcode == "SUB" || instr.opcode == "MUL") {
             string rd, rs1, rs2;
-            iss >> rd >> rs1 >> rs2; // Get destination and source registers
-            int rd_idx = reg_index(rd), rs1_idx = reg_index(rs1), rs2_idx = reg_index(rs2);
-
-            // Execute the arithmetic operation
-            if (opcode == "ADD")
-                registers[CID][rd_idx] = registers[CID][rs1_idx] + registers[CID][rs2_idx];
-            else if (opcode == "SUB")
-                registers[CID][rd_idx] = registers[CID][rs1_idx] - registers[CID][rs2_idx];
-            else if (opcode == "MUL")
-                registers[CID][rd_idx] = registers[CID][rs1_idx] * registers[CID][rs2_idx];
-
-            ID_EX = rd_idx; // Move to EX stage
-        }
-        // ID/EX (Decode and Execute stage)
-        else if (opcode == "ADDI")
-        {
+            iss >> rd >> rs1 >> rs2;
+            instr.dest_reg = reg_index(rd);
+            instr.src_reg1 = reg_index(rs1);
+            instr.src_reg2 = reg_index(rs2);
+        } 
+        else if (instr.opcode == "ADDI") {
             string rd, rs1;
-            int imm;
-            iss >> rd >> rs1 >> imm;
-            registers[CID][reg_index(rd)] = registers[CID][reg_index(rs1)] + imm;
-            ID_EX = reg_index(rd); // Move to EX stage
+            iss >> rd >> rs1 >> instr.imm;
+            instr.dest_reg = reg_index(rd);
+            instr.src_reg1 = reg_index(rs1);
         }
-        else if (opcode == "ARR"){
-            int n;
-            iss>>n;
-            for (int i = 0; i < n; ++i)
-            {
-                memory[i / 25][i % 25] = i + 1;  // Distribute across the 4 cores' memory sections
-                registers[i / 25][i % 25] = i + 1; // Initialize core registers
-            }
+        else if (instr.opcode == "ARR") {
+            iss >> instr.imm;
         }
-        // EX/MEM (Execute and Memory stage)
-        else if (opcode == "LD")
-        {
+        else if (instr.opcode == "LD" || instr.opcode == "LDC2" || instr.opcode == "LDC3" || instr.opcode == "LDC4") {
             string rd, address;
             iss >> rd >> address;
-            registers[CID][reg_index(rd)] = memory[CID][stoi(address)]; // Load from memory to register
-            ID_EX = reg_index(rd); // Move to EX stage
+            instr.dest_reg = reg_index(rd);
+            instr.mem_addr = stoi(address);
         }
-        else if (opcode == "LDC2")
-        {
-            string rd, address;
-            iss >> rd >> address;
-            if(CID==0)
-            registers[CID][reg_index(rd)] = memory[CID+1][stoi(address)]; // Accessing memory of other cores
-            ID_EX = reg_index(rd);
-        }
-        // MEM/WB (Memory and Write-back stage)
-        else if (opcode == "LDC3")
-        {
-            string rd, address;
-            iss >> rd >> address;
-            if(CID==0)
-            registers[CID][reg_index(rd)] = memory[CID+2][stoi(address)]; // Accessing memory of other cores
-            ID_EX = reg_index(rd);
-        }
-        // Write-back (final result stored to register)
-        else if (opcode == "LDC4")
-        {
-            string rd, address;
-            iss >> rd >> address;
-            if(CID==0)
-            registers[CID][reg_index(rd)] = memory[CID+3][stoi(address)]; // Accessing memory of other cores
-            ID_EX = reg_index(rd);
-        }
-        // Store Word instruction
-        else if (opcode == "SW")
-        {
+        else if (instr.opcode == "SW") {
             string rs, address;
             iss >> rs >> address;
-            memory[CID][stoi(address)] = registers[CID][reg_index(rs)]; // Store value from register to memory
+            instr.src_reg1 = reg_index(rs);
+            instr.mem_addr = stoi(address);
         }
-        // Branch instruction with control hazard
-        else if (opcode == "BNE")
-        {
+        else if (instr.opcode == "BNE") {
             string rs1, rs2, label;
             iss >> rs1 >> rs2 >> label;
-            if (registers[CID][reg_index(rs1)] != registers[CID][reg_index(rs2)] && labels.count(label))
-            {
-                stalls += 2; // Control hazard stall (branch misprediction)
-                pc = labels[label]; // Jump to branch target
+            instr.src_reg1 = reg_index(rs1);
+            instr.src_reg2 = reg_index(rs2);
+            instr.label = label;
+        }
+        else if (instr.opcode == "J") {
+            iss >> instr.label;
+        }
+
+        // Check for RAW hazards
+        int raw_stalls = check_raw_hazard(instr);
+        
+        // This is critical - increment stalls properly
+        if (raw_stalls > 0) {
+            stalls += raw_stalls;
+            current_cycle += raw_stalls;
+        }
+        
+        // Mark when the destination register will be ready
+        if (instr.dest_reg != -1) {
+            // For pipelined execution with forwarding, the result is available after EX stage
+            if (forwarding) {
+                reg_ready_cycle[instr.dest_reg] = current_cycle + 2; // Available after EX stage
+            } else {
+                // Without forwarding, result is available after WB stage
+                reg_ready_cycle[instr.dest_reg] = current_cycle + latency;
+            }
+        }
+        
+        // Execute the instruction
+        executed_instructions++;
+        instr.issue_cycle = current_cycle;
+        
+        // Process branching
+        if (instr.opcode == "BNE") {
+            if (registers[CID][instr.src_reg1] != registers[CID][instr.src_reg2] && labels.count(instr.label)) {
+                stalls += 2; // Branch penalty (2 cycles)
+                current_cycle += 2;
+                pc = labels[instr.label];
+                return;
+            }
+        } 
+        else if (instr.opcode == "J") {
+            if (labels.count(instr.label)) {
+                stalls += 2; // Jump penalty (2 cycles)
+                current_cycle += 2;
+                pc = labels[instr.label];
                 return;
             }
         }
-        // Jump instruction with control hazard
-        else if (opcode == "J")
-        {
-            string label;
-            iss >> label;
-            if (labels.count(label))
-            {
-                stalls += 2; // Control hazard stall (jump misprediction)
-                pc = labels[label]; // Jump to target address
-                return;
+        
+        // Perform the actual operation
+        if (instr.opcode == "ADD") {
+            registers[CID][instr.dest_reg] = registers[CID][instr.src_reg1] + registers[CID][instr.src_reg2];
+        } 
+        else if (instr.opcode == "SUB") {
+            registers[CID][instr.dest_reg] = registers[CID][instr.src_reg1] - registers[CID][instr.src_reg2];
+        } 
+        else if (instr.opcode == "MUL") {
+            registers[CID][instr.dest_reg] = registers[CID][instr.src_reg1] * registers[CID][instr.src_reg2];
+        } 
+        else if (instr.opcode == "ADDI") {
+            registers[CID][instr.dest_reg] = registers[CID][instr.src_reg1] + instr.imm;
+        } 
+        else if (instr.opcode == "ARR") {
+            for (int i = 0; i < instr.imm; ++i) {
+                memory[i / 25][i % 25] = i + 1;
+                registers[i / 25][i % 25] = i + 1;
             }
+        } 
+        else if (instr.opcode == "LD") {
+            registers[CID][instr.dest_reg] = memory[CID][instr.mem_addr];
+        } 
+        else if (instr.opcode == "LDC2") {
+            if (CID == 0)
+                registers[CID][instr.dest_reg] = memory[CID+1][instr.mem_addr];
+        } 
+        else if (instr.opcode == "LDC3") {
+            if (CID == 0)
+                registers[CID][instr.dest_reg] = memory[CID+2][instr.mem_addr];
+        } 
+        else if (instr.opcode == "LDC4") {
+            if (CID == 0)
+                registers[CID][instr.dest_reg] = memory[CID+3][instr.mem_addr];
+        } 
+        else if (instr.opcode == "SW") {
+            memory[CID][instr.mem_addr] = registers[CID][instr.src_reg1];
         }
-        pc++; // Increment program counter (IF stage)
+        
+        // Update pipeline state
+        pipeline.push_back(instr);
+        
+        // Calculate stalls for non-pipelined execution (instruction latency)
+        if (!forwarding && latency > 1) {
+            stalls += (latency - 1);  // Count additional cycles as stalls for non-pipelined
+        }
+        
+        // Update cycle count based on execution model
+        if (forwarding) {
+            current_cycle++; // One cycle per instruction (pipelined)
+        } else {
+            current_cycle += latency; // Full latency per instruction (non-pipelined)
+        }
+        
+        pc++; // Increment program counter
+    }
+    
+    // Get final cycle count
+    int get_total_cycles() {
+        return current_cycle;
     }
 };
 
@@ -195,16 +275,6 @@ public:
             cores.emplace_back(i, enable_forwarding); // Initialize cores with forwarding flag
         }
     }
-
-    // Assign memory values to different cores
-   /* void assign_memory_to_cores()
-    {
-        for (int i = 0; i < 100; ++i)
-        {
-            memory[i / 25][i % 25] = i + 1;  // Distribute across the 4 cores' memory sections
-            cores[i / 25].registers[i / 25][i % 25] = i + 1; // Initialize core registers
-        }
-    }*/
 
     // Set instruction latencies for the cores
     void set_instruction_latencies()
@@ -257,13 +327,18 @@ public:
         {
             cout << "Core " << i << " Stats:" << endl;
             cout << "Number of stalls: " << cores[i].stalls << endl;
-            cout << "Instructions per cycle (IPC): " << (static_cast<double>(cores[i].executed_instructions) / cores[i].clock_cycles) << endl;
-            cout << "Number of clock cycles: " << cores[i].clock_cycles << endl;
+            
+            int total_cycles = cores[i].get_total_cycles();
+            cout << "Number of clock cycles: " << total_cycles << endl;
+            
+            double ipc = static_cast<double>(cores[i].executed_instructions) / total_cycles;
+            cout << "Instructions per cycle (IPC): " << ipc << endl;
             
             cout << "Register States:\n";
             for (int j = 0; j < 32; ++j)
             {
                 cout << "x" << j << ": " << cores[i].registers[i][j] << "  ";
+                if (j % 8 == 7) cout << endl;  // Line break every 8 registers for readability
             }
             cout << endl;
         }
@@ -272,7 +347,6 @@ public:
     // Run the program on all cores
     void run()
     {
-        //assign_memory_to_cores(); // Assign memory to cores
         while (true)
         {
             bool all_done = true;
@@ -293,7 +367,7 @@ public:
 int main()
 {
     bool enable_forwarding;
-    int num_cores=4;
+    int num_cores = 4;
     cout << "Enable data forwarding? (1 for Yes, 0 for No): ";
     cin >> enable_forwarding;
 
