@@ -1,7 +1,4 @@
- # Roll No 21 Shouryanga parvam
- ## Team Members
- ### M.Rohith Venkat     CS23B032
- ### L.Narshima          CS23B028
+
 # Multi-Core Processor Simulator
 
 ## Project Overview
